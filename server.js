@@ -10,11 +10,15 @@ const API_KEY = process.env.ANTHROPIC_API_KEY;
 
 app.post('/analyze', async (req, res) => {
   try {
-    const { image, media_type } = req.body;
+    const { image, media_type, note } = req.body;
 
     if (!API_KEY) {
       return res.status(500).json({ error: 'API key not configured on server' });
     }
+
+    const noteText = note && note.trim() 
+      ? `\n\nNOTA IMPORTANTE del usuario sobre esta comida: "${note.trim()}". Toma esto en cuenta y ajusta el cálculo de calorías/grasas en consecuencia (por ejemplo, si dice "sin aceite", no asumas grasa de cocción).` 
+      : '';
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -30,7 +34,7 @@ app.post('/analyze', async (req, res) => {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type, data: image } },
-            { type: 'text', text: `Analiza esta foto de comida. La persona: 80kg, 1.72m, 36 años, box 2x/semana, meta bajar de peso, 1420 kcal/día.
+            { type: 'text', text: `Analiza esta foto de comida. La persona: 80kg, 1.72m, 36 años, box 2x/semana, meta bajar de peso, 1420 kcal/día.${noteText}
 
 Responde SOLO JSON válido, sin texto extra ni markdown:
 {"name":"nombre del plato","cal":número,"protein":gramos,"carbs":gramos,"fat":gramos,"verdict":"verde|amarillo|rojo","comment":"feedback corto honesto en español máx 2 oraciones","tip":"tip práctico personalizado máx 1 oración"}
